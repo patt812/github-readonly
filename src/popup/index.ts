@@ -5,145 +5,68 @@
 
 import './styles/index.css';
 
-interface CounterStorage {
-  get: (cb: (count: number) => void) => void;
-  set: (value: number, cb: () => void) => void;
+interface ReadonlyStorage {
+  get: (cb: (enabled: boolean) => void) => void;
+  set: (value: boolean, cb: () => void) => void;
 }
 
-interface UpdateCounterAction {
-  type: 'INCREMENT' | 'DECREMENT';
-}
-
-interface CountMessage {
-  type: 'COUNT';
-  payload: {
-    count: number;
-  };
-}
-
-interface GreetingsResponse {
-  message: string;
-}
-
-// This is an IIFE (Immediately Invoked Function Expression)
-// We use it to avoid polluting the global namespace
-(function () {
-  // We will make use of Storage API to get and store `count` value
-  // More information on Storage API can we found at
-  // https://developer.chrome.com/extensions/storage
-  const counterStorage: CounterStorage = {
-    get: (cb) => {
-      chrome.storage.sync.get(['count'], (result) => {
-        cb(result.count);
-      });
-    },
-    set: (value, cb) => {
-      chrome.storage.sync.set(
-        {
-          count: value,
-        },
-        () => {
-          cb();
-        }
-      );
-    },
-  };
-
-  function setupCounter(initialValue: number = 0): void {
-    const counterElement = document.getElementById('counter');
-    const incrementBtn = document.getElementById('incrementBtn');
-    const decrementBtn = document.getElementById('decrementBtn');
-
-    if (!counterElement || !incrementBtn || !decrementBtn) {
-      console.error('Required elements not found');
-      return;
-    }
-
-    counterElement.innerHTML = initialValue.toString();
-
-    incrementBtn.addEventListener('click', () => {
-      updateCounter({
-        type: 'INCREMENT',
-      });
+// Storage API wrapper
+const readonlyStorage: ReadonlyStorage = {
+  get: (cb) => {
+    chrome.storage.sync.get(['readonly'], (result) => {
+      cb(result.readonly ?? false);
     });
+  },
+  set: (value, cb) => {
+    chrome.storage.sync.set(
+      {
+        readonly: value,
+      },
+      () => {
+        cb();
+      }
+    );
+  },
+};
 
-    decrementBtn.addEventListener('click', () => {
-      updateCounter({
-        type: 'DECREMENT',
-      });
-    });
+// Initialize toggle state
+function initializeToggle(): void {
+  const toggle = document.getElementById('readonlyToggle') as HTMLInputElement;
+  if (!toggle) {
+    console.error('Toggle element not found');
+    return;
   }
 
-  function updateCounter({ type }: UpdateCounterAction): void {
-    counterStorage.get((count) => {
-      let newCount: number;
+  // Restore state
+  readonlyStorage.get((enabled) => {
+    toggle.checked = enabled;
+  });
 
-      if (type === 'INCREMENT') {
-        newCount = (count || 0) + 1;
-      } else if (type === 'DECREMENT') {
-        newCount = (count || 0) - 1;
-      } else {
-        newCount = count || 0;
-      }
-
-      counterStorage.set(newCount, () => {
-        const counterElement = document.getElementById('counter');
-        if (!counterElement) {
-          console.error('Counter element not found');
+  // Handle toggle changes
+  toggle.addEventListener('change', () => {
+    const enabled = toggle.checked;
+    readonlyStorage.set(enabled, () => {
+      // Notify content script
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const tab = tabs[0];
+        if (!tab.id) {
+          console.error('Tab ID not found');
           return;
         }
 
-        counterElement.innerHTML = newCount.toString();
-
-        // Communicate with content script of active tab
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          const tab = tabs[0];
-          if (!tab.id) {
-            console.error('Tab ID not found');
-            return;
-          }
-
-          chrome.tabs.sendMessage(
-            tab.id,
-            {
-              type: 'COUNT',
-              payload: {
-                count: newCount,
-              },
+        chrome.tabs.sendMessage(
+          tab.id,
+          {
+            type: 'READONLY_CHANGED',
+            payload: {
+              enabled,
             },
-            () => {
-              console.log('Current count value passed to contentScript file');
-            }
-          );
-        });
+          }
+        );
       });
     });
-  }
+  });
+}
 
-  function restoreCounter(): void {
-    counterStorage.get((count) => {
-      if (typeof count === 'undefined') {
-        counterStorage.set(0, () => {
-          setupCounter(0);
-        });
-      } else {
-        setupCounter(count);
-      }
-    });
-  }
-
-  document.addEventListener('DOMContentLoaded', restoreCounter);
-
-  // Communicate with background file by sending a message
-  chrome.runtime.sendMessage(
-    {
-      type: 'GREETINGS',
-      payload: {
-        message: 'Hello, my name is Pop. I am from Popup.',
-      },
-    },
-    (response: GreetingsResponse) => {
-      console.log(response.message);
-    }
-  );
-})(); 
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', initializeToggle); 

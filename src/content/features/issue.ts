@@ -1,8 +1,10 @@
 import { disableElement, disableElementBySelector } from '../utils/dom';
 import { GitHubElement } from '../../types';
 
+let observer: MutationObserver | null = null;
+
 /**
- * Disable various operations on the Issue page
+ * Disable operations on the Issue page
  */
 export function disableIssueControls(): void {
   // Disable settings icon
@@ -32,13 +34,30 @@ export function initializeIssueControls(): void {
     disableIssueControls();
     
     // Observe DOM changes to handle dynamic content
-    const observer = new MutationObserver(() => {
-      disableIssueControls();
-    });
-    
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
+    if (!observer) {
+      observer = new MutationObserver(() => {
+        disableIssueControls();
+      });
+      
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+    }
   }
+}
+
+/**
+ * Remove controls from the Issue page
+ */
+export function removeIssueControls(): void {
+  // Stop observing DOM changes
+  if (observer) {
+    observer.disconnect();
+    observer = null;
+  }
+
+  // TODO: Restore disabled elements
+  // This will require keeping track of which elements were disabled
+  // For now, page refresh will restore the original state
 } 

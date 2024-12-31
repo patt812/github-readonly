@@ -1,33 +1,62 @@
 import { createReadOnlyBanner } from './features/banner';
-import { initializeIssueControls } from './features/issue';
-import { CountRequest, GreetingsResponse } from '../types';
+import { initializeIssueControls, removeIssueControls } from './features/issue';
 
-createReadOnlyBanner();
-initializeIssueControls();
+interface ReadonlyMessage {
+  type: 'READONLY_CHANGED';
+  payload: {
+    enabled: boolean;
+  };
+}
 
-// Communication with background script
-chrome.runtime.sendMessage(
-  {
-    type: 'GREETINGS',
-    payload: {
-      message: 'Hello, my name is Con. I am from ContentScript.',
-    },
-  },
-  (response: GreetingsResponse) => {
-    console.log(response.message);
-  }
-);
+let banner: HTMLElement | null = null;
+let isReadonlyMode = false;
 
-// Message listener
+// Initialize based on stored state
+function initialize(): void {
+  chrome.storage.sync.get(['readonly'], (result) => {
+    const enabled = result.readonly ?? false;
+    isReadonlyMode = enabled;
+    if (enabled) {
+      enableReadonlyMode();
+    } else {
+      disableReadonlyMode();
+    }
+  });
+}
+
+// Message listener for state changes
 chrome.runtime.onMessage.addListener((
-  request: CountRequest,
+  message: ReadonlyMessage,
   sender: chrome.runtime.MessageSender,
   sendResponse: (response?: {}) => void
 ) => {
-  if (request.type === 'COUNT') {
-    console.log(`Current count is ${request.payload.count}`);
+  if (message.type === 'READONLY_CHANGED') {
+    isReadonlyMode = message.payload.enabled;
+    if (message.payload.enabled) {
+      enableReadonlyMode();
+    } else {
+      disableReadonlyMode();
+    }
   }
 
   sendResponse({});
   return true;
-}); 
+});
+
+function enableReadonlyMode(): void {
+  if (!banner) {
+    banner = createReadOnlyBanner();
+  }
+  initializeIssueControls();
+}
+
+function disableReadonlyMode(): void {
+  if (banner && banner.parentElement) {
+    banner.parentElement.removeChild(banner);
+    banner = null;
+  }
+  removeIssueControls();
+}
+
+// Start initialization
+initialize(); 
