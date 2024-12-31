@@ -19,6 +19,9 @@ const common = {
     // the filename template for entry chunks
     filename: '[name].js',
   },
+  resolve: {
+    extensions: ['.ts', '.js'],
+  },
   stats: {
     all: false,
     errors: true,
@@ -28,6 +31,12 @@ const common = {
   },
   module: {
     rules: [
+      // TypeScript loader
+      {
+        test: /\.ts$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
+      },
       // Help webpack in understanding CSS files imported in .js files
       {
         test: /\.css$/,

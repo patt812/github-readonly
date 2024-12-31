@@ -1,11 +1,20 @@
-'use strict';
-
 // With background scripts you can communicate with popup
 // and contentScript files.
 // For more information on background script,
 // See https://developer.chrome.com/extensions/background_pages
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+interface MessageRequest {
+  type: string;
+  payload: {
+    message: string;
+  };
+}
+
+chrome.runtime.onMessage.addListener((
+  request: MessageRequest,
+  sender: chrome.runtime.MessageSender,
+  sendResponse: (response: { message: string }) => void
+) => {
   if (request.type === 'GREETINGS') {
     const message = `Hi ${
       sender.tab ? 'Con' : 'Pop'
@@ -18,4 +27,4 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       message,
     });
   }
-});
+}); 
