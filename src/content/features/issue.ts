@@ -3,28 +3,76 @@ import { GitHubElement } from '../../types';
 
 /**
  * Issue page feature for readonly mode
+ * Disables interactive elements on GitHub issue pages
  */
 
 let observer: MutationObserver | null = null;
 
 function disableControls(): void {
-  // Disable settings icon
-  document.querySelectorAll<GitHubElement>('.octicon-gear').forEach((element) => {
-    const button = element.closest<GitHubElement>('button');
-    if (button) {
-      disableElement(button);
-    }
-  });
-
-  // Disable various links and buttons
-  const selectors = [
-    'a[href*="assign yourself"]',
-    'a[href*="Create a branch"]',
-    'button[data-testid*="open-in-workspace"]',
-    'button[aria-label*="Unsubscribe"]'
+  // Disable all settings and configuration buttons
+  const settingsSelectors = [
+    '[data-testid="settings-button"]',
+    '[aria-label*="settings"]',
+    '.octicon-gear'  // Fallback for gear icons
   ];
 
-  selectors.forEach(disableElementBySelector);
+  settingsSelectors.forEach(selector => {
+    document.querySelectorAll<GitHubElement>(selector).forEach(element => {
+      const button = element.closest<GitHubElement>('button, summary');
+      if (button) {
+        disableElement(button);
+      }
+    });
+  });
+
+  // Disable various interactive elements
+  const controlSelectors = [
+    // Assignees
+    '[data-testid="assignees-menu"]',
+    '[aria-label*="assign yourself"]',
+    
+    // Branch creation
+    '[data-testid="create-branch"]',
+    '[aria-label*="Create a branch"]',
+    
+    // Workspace
+    '[data-testid="open-in-workspace"]',
+    '[data-view-component="true"].Button--fullWidth',
+    
+    // Notifications
+    '[data-testid="notifications-button"]',
+    '[aria-label*="Subscribe"]',
+    '[aria-label*="Unsubscribe"]',
+    '[data-thread-subscribe-button]',
+    
+    // Labels and Projects
+    '[data-testid="labels-menu"]',
+    '[data-testid="projects-menu"]',
+
+    // Development section
+    '[data-testid="development"]',
+    
+    // Issue state changes
+    '[data-testid="close-button"]',
+    '[data-testid="reopen-button"]',
+    '.select-menu-list',
+    '.select-menu-item',
+    'input[name="state_reason"]',
+    'label[role="menuitemradio"]',
+
+    // Issue management
+    '.js-lock-issue',
+    '.js-delete-issue',
+    '.lock-toggle-link',
+    'form[action*="/pin"]',
+    'form[action*="/lock"]',
+    'form.edit_issue',
+    'button[type="submit"]',
+    '.btn-link.text-bold',
+    '.btn-danger'
+  ];
+
+  controlSelectors.forEach(disableElementBySelector);
 }
 
 export const issueFeature = {
@@ -50,8 +98,5 @@ export const issueFeature = {
       observer.disconnect();
       observer = null;
     }
-    // TODO: Restore disabled elements
-    // This will require keeping track of which elements were disabled
-    // For now, page refresh will restore the original state
   }
 }; 
