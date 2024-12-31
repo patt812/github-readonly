@@ -3,7 +3,7 @@
 // For more information on Popup Script, see:
 // https://developer.chrome.com/extensions/browserAction
 
-import './popup.css';
+import './styles/index.css';
 
 interface CounterStorage {
   get: (cb: (count: number) => void) => void;
