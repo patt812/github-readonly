@@ -1,10 +1,12 @@
 /**
- * Create and insert a banner for read-only mode
- * @returns The created banner element
+ * Banner feature for readonly mode
  */
-export function createReadOnlyBanner(): HTMLElement {
-  const banner = document.createElement('div');
-  banner.style.cssText = `
+
+let banner: HTMLElement | null = null;
+
+function createBanner(): HTMLElement {
+  const element = document.createElement('div');
+  element.style.cssText = `
     position: fixed;
     top: 0;
     left: 0;
@@ -16,7 +18,21 @@ export function createReadOnlyBanner(): HTMLElement {
     font-weight: bold;
     z-index: 9999;
   `;
-  banner.textContent = '🔒 Read Only Mode';
-  document.body.insertBefore(banner, document.body.firstChild);
-  return banner;
-} 
+  element.textContent = '🔒 Read Only Mode';
+  return element;
+}
+
+export const bannerFeature = {
+  enable: () => {
+    if (!banner) {
+      banner = createBanner();
+      document.body.insertBefore(banner, document.body.firstChild);
+    }
+  },
+  disable: () => {
+    if (banner && banner.parentElement) {
+      banner.parentElement.removeChild(banner);
+      banner = null;
+    }
+  }
+}; 
