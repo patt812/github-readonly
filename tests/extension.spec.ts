@@ -31,17 +31,30 @@ test.describe('GitHub Readonly Extension - Issues', () => {
     const issueUrl = `https://github.com/${testRepo}/issues/1`;
     console.log('Accessing URL:', issueUrl);
     
-    await page.goto(issueUrl);
-    await page.waitForLoadState('networkidle');
+    await page.goto(issueUrl, { timeout: 6000 });
+    
+    // Wait for the page to be fully loaded
+    await page.waitForLoadState('networkidle', { timeout: 6000 });
+    await page.waitForLoadState('domcontentloaded', { timeout: 6000 });
 
-    // Find edit button
+    // Debug: Log the page title
+    console.log('Page title:', await page.title());
+
+    // Wait for the issue content to be visible
+    await page.waitForSelector('.js-issue-title', { timeout: 6000 });
+
+    // Find edit button with more specific selectors
     const editButton = page.locator([
-      'button[aria-label="Edit Issue"]',
-      'button:has-text("Edit")',
-      '.js-comment-edit-button'
+      'button.js-comment-edit-button',
+      'button[aria-label="Edit issue title and description"]',
+      'button.timeline-comment-action[aria-label="Edit"]'
     ].join(','));
 
-    await expect(editButton).toBeVisible({ timeout: 30000 });
+    // Debug: Log the number of edit buttons found
+    const count = await editButton.count();
+    console.log('Number of edit buttons found:', count);
+
+    await expect(editButton).toBeVisible({ timeout: 6000 });
 
     // Check if button is disabled
     const isDisabled = await editButton.evaluate((el) => {
