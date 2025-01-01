@@ -6,11 +6,6 @@ on:
   pull_request:
     branches: [ main ]
 
-permissions:
-  contents: read
-  pages: read
-  issues: write
-
 jobs:
   test:
     timeout-minutes: 60
@@ -28,7 +23,7 @@ jobs:
       run: npm run build
     - name: Run Playwright tests
       env:
-        GITHUB_TOKEN: ${{ github.token }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         TEST_REPO: ${{ github.repository }}
       run: npm run test
     - uses: actions/upload-artifact@v4

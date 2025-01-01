@@ -2,34 +2,48 @@ import { test, expect } from '@playwright/test';
 
 test.describe('GitHub Readonly Extension - Issues', () => {
   test.beforeEach(async ({ context }) => {
-    // 拡張機能をONに設定
+    // Check environment variables
+    const token = process.env.GITHUB_TOKEN;
+    const testRepo = process.env.TEST_REPO || 'patt812/github-readonly-test';
+    
+    if (!token) {
+      console.error('GITHUB_TOKEN is not set');
+      throw new Error('Missing required environment variable: GITHUB_TOKEN');
+    }
+
+    // Enable extension
     await context.addInitScript(() => {
       window.localStorage.setItem('github-readonly-enabled', 'true');
     });
 
-    // GitHub APIトークンを設定
-    const token = process.env.GITHUB_TOKEN;
-    if (token) {
-      await context.setExtraHTTPHeaders({
-        'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json'
-      });
-    }
+    // Set GitHub API token
+    await context.setExtraHTTPHeaders({
+      'Authorization': `token ${token}`,
+      'Accept': 'application/vnd.github.v3+json'
+    });
   });
 
   test('should disable edit button on issue page', async ({ page }) => {
-    // テスト用のIssueページにアクセス
     const testRepo = process.env.TEST_REPO || 'patt812/github-readonly-test';
-    await page.goto(`https://github.com/${testRepo}/issues/1`);
+    console.log('Using test repository:', testRepo);
+
+    // Access fixed test issue
+    const issueUrl = `https://github.com/${testRepo}/issues/1`;
+    console.log('Accessing URL:', issueUrl);
     
-    // ページの読み込みを待つ
+    await page.goto(issueUrl);
     await page.waitForLoadState('networkidle');
 
-    // Editボタンを探す
-    const editButton = page.locator('button[aria-label="Edit Issue"]');
-    await expect(editButton).toBeVisible();
+    // Find edit button
+    const editButton = page.locator([
+      'button[aria-label="Edit Issue"]',
+      'button:has-text("Edit")',
+      '.js-comment-edit-button'
+    ].join(','));
 
-    // ボタンが無効化されているか確認
+    await expect(editButton).toBeVisible({ timeout: 30000 });
+
+    // Check if button is disabled
     const isDisabled = await editButton.evaluate((el) => {
       const style = window.getComputedStyle(el);
       return style.pointerEvents === 'none' || 
