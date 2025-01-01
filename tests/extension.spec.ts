@@ -4,7 +4,7 @@ test.describe('GitHub Readonly Extension - Issues', () => {
   test.beforeEach(async ({ context }) => {
     // Check environment variables
     const token = process.env.GITHUB_TOKEN;
-    const testRepo = process.env.TEST_REPO || 'patt812/github-readonly-test';
+    const testRepo = 'patt812/github-readonly-test';
     
     if (!token) {
       console.error('GITHUB_TOKEN is not set');
@@ -24,7 +24,7 @@ test.describe('GitHub Readonly Extension - Issues', () => {
   });
 
   test('should disable edit button on issue page', async ({ page }) => {
-    const testRepo = process.env.TEST_REPO || 'patt812/github-readonly-test';
+    const testRepo = 'patt812/github-readonly-test';
     console.log('Using test repository:', testRepo);
 
     // Access fixed test issue
