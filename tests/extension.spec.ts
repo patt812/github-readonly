@@ -43,16 +43,24 @@ test.describe('GitHub Readonly Extension - Issues', () => {
     // Wait for the issue content to be visible
     await page.waitForSelector('.js-issue-title', { timeout: 6000 });
 
-    // Find edit button with more specific selectors
+    // Debug: Take a screenshot of the page
+    await page.screenshot({ path: 'test-results/issue-page.png' });
+
+    // Find edit button with updated selectors
     const editButton = page.locator([
-      'button.js-comment-edit-button',
-      'button[aria-label="Edit issue title and description"]',
-      'button.timeline-comment-action[aria-label="Edit"]'
+      '[data-hotkey="e"]',  // Edit hotkey button
+      'button[aria-label*="Edit"]',  // Any button with "Edit" in aria-label
+      'button.js-comment-edit-button',  // Edit comment button
+      'button:has-text("Edit")'  // Any button with "Edit" text
     ].join(','));
 
     // Debug: Log the number of edit buttons found
     const count = await editButton.count();
     console.log('Number of edit buttons found:', count);
+
+    // Debug: Log all buttons on the page
+    const allButtons = await page.locator('button').count();
+    console.log('Total number of buttons on page:', allButtons);
 
     await expect(editButton).toBeVisible({ timeout: 6000 });
 
