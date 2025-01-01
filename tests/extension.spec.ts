@@ -46,12 +46,26 @@ test.describe('GitHub Readonly Extension - Issues', () => {
     // Debug: Take a screenshot of the page
     await page.screenshot({ path: 'test-results/issue-page.png' });
 
+    // Debug: Log all buttons and their properties
+    const allButtonInfo = await page.evaluate(() => {
+      const buttons = document.querySelectorAll('button');
+      return Array.from(buttons).map(button => ({
+        text: button.textContent?.trim(),
+        ariaLabel: button.getAttribute('aria-label'),
+        className: button.className,
+        id: button.id,
+        dataHotkey: button.getAttribute('data-hotkey')
+      }));
+    });
+    console.log('All buttons on page:', JSON.stringify(allButtonInfo, null, 2));
+
     // Find edit button with updated selectors
     const editButton = page.locator([
-      '[data-hotkey="e"]',  // Edit hotkey button
-      'button[aria-label*="Edit"]',  // Any button with "Edit" in aria-label
-      'button.js-comment-edit-button',  // Edit comment button
-      'button:has-text("Edit")'  // Any button with "Edit" text
+      'button.js-comment-edit-button',
+      'button[aria-label="Edit title and description"]',
+      'button[aria-label="Edit comment"]',
+      'button.timeline-comment-action',
+      'button:has-text("Edit")'
     ].join(','));
 
     // Debug: Log the number of edit buttons found
